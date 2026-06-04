@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task Manager</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; min-height: 100vh; }
+    .navbar { background: white; padding: 16px 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); display: flex; align-items: center; gap: 32px; }
+    .nav-brand { font-size: 20px; font-weight: 700; color: #6c63ff; }
+    .nav-links { display: flex; gap: 8px; }
+    .nav-btn { padding: 8px 18px; border-radius: 20px; border: none; background: none; font-size: 14px; cursor: pointer; color: #666; font-weight: 500; transition: all 0.2s; }
+    .nav-btn:hover { background: #f0f2f5; color: #333; }
+    .nav-btn.active { background: #6c63ff; color: white; }
+    .page { display: none; padding: 40px 20px; max-width: 700px; margin: 0 auto; }
+    .page.active { display: block; }
+    h1 { font-size: 26px; font-weight: 700; color: #1a1a2e; margin-bottom: 6px; }
+    .subtitle { color: #888; margin-bottom: 28px; font-size: 14px; }
+    .card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); margin-bottom: 20px; }
+    .input-row { display: flex; gap: 10px; }
+    input[type="text"] { flex: 1; padding: 12px 16px; border: 2px solid #e8e8e8; border-radius: 10px; font-size: 15px; outline: none; transition: border-color 0.2s; }
+    input[type="text"]:focus { border-color: #6c63ff; }
+    button.add-btn { background: #6c63ff; color: white; border: none; padding: 12px 20px; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+    button.add-btn:hover { background: #5a52d5; }
+    .stats { display: flex; gap: 12px; margin-bottom: 20px; }
+    .stat { flex: 1; background: white; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .stat-num { font-size: 28px; font-weight: 700; color: #6c63ff; }
+    .stat-label { font-size: 12px; color: #999; margin-top: 4px; }
+    .task-list { display: flex; flex-direction: column; gap: 10px; }
+    .task-item { display: flex; align-items: center; gap: 12px; background: white; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); transition: transform 0.1s; }
+    .task-item:hover { transform: translateY(-1px); }
+    .task-item.done .task-title { text-decoration: line-through; color: #bbb; }
+    .checkbox { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #6c63ff; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.2s; font-size: 13px; color: white; font-weight: 700; }
+    .checkbox.checked { background: #6c63ff; }
+    .task-title { flex: 1; font-size: 15px; color: #333; }
+    .delete-btn { background: none; border: none; color: #ddd; font-size: 22px; cursor: pointer; transition: color 0.2s; }
+    .delete-btn:hover { color: #ff5c5c; }
+    .filter-row { display: flex; gap: 8px; margin-bottom: 16px; }
+    .filter-btn { padding: 6px 14px; border-radius: 20px; border: 2px solid #e8e8e8; background: white; font-size: 13px; cursor: pointer; transition: all 0.2s; color: #666; }
+    .filter-btn.active { background: #6c63ff; border-color: #6c63ff; color: white; }
+    .empty { text-align: center; padding: 40px; color: #bbb; font-size: 15px; }
+    .health-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+    .health-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); }
+    .health-status { display: flex; align-items: center; gap: 12px; }
+    .status-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+    .status-dot.green { background: #22c55e; box-shadow: 0 0 8px rgba(34,197,94,0.5); }
+    .status-dot.red { background: #ef4444; }
+    .status-label { font-size: 18px; font-weight: 700; color: #1a1a2e; }
+    .health-detail { font-size: 13px; color: #999; margin-top: 8px; }
+    .metric-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+    .metric-row:last-child { border-bottom: none; }
+    .metric-name { font-size: 14px; color: #555; font-family: monospace; }
+    .metric-value { font-size: 14px; font-weight: 600; color: #6c63ff; }
+    .refresh-btn { background: #f0f2f5; border: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; cursor: pointer; color: #555; font-weight: 500; transition: background 0.2s; }
+    .refresh-btn:hover { background: #e0e2e8; }
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .badge.ok { background: #dcfce7; color: #16a34a; }
+    .badge.error { background: #fee2e2; color: #dc2626; }
+    .uptime-bar { background: #f0f2f5; border-radius: 8px; height: 8px; margin-top: 8px; overflow: hidden; }
+    .uptime-fill { background: #6c63ff; height: 100%; border-radius: 8px; width: 100%; }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="nav-brand">Task Manager</div>
+  <div class="nav-links">
+    <button class="nav-btn active" onclick="showPage('tasks', this)">Tasks</button>
+    <button class="nav-btn" onclick="showPage('health', this)">Health</button>
+    <button class="nav-btn" onclick="showPage('metrics', this)">Metrics</button>
+  </div>
+</nav>
+
+<!-- TASKS PAGE -->
+<div class="page active" id="page-tasks">
+  <h1>My Tasks</h1>
+  <p class="subtitle">Keep track of what needs to get done</p>
+  <div class="stats">
+    <div class="stat"><div class="stat-num" id="total">0</div><div class="stat-label">Total</div></div>
+    <div class="stat"><div class="stat-num" id="pending">0</div><div class="stat-label">Pending</div></div>
+    <div class="stat"><div class="stat-num" id="completed">0</div><div class="stat-label">Done</div></div>
+  </div>
+  <div class="card">
+    <div class="input-row">
+      <input type="text" id="taskInput" placeholder="Add a new task..." onkeydown="if(event.key==='Enter') addTask()">
+      <button class="add-btn" onclick="addTask()">+ Add</button>
+    </div>
+  </div>
+  <div class="filter-row">
+    <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
+    <button class="filter-btn" onclick="setFilter('pending', this)">Pending</button>
+    <button class="filter-btn" onclick="setFilter('done', this)">Done</button>
+  </div>
+  <div class="task-list" id="taskList"></div>
+</div>
+
+<!-- HEALTH PAGE -->
+<div class="page" id="page-health">
+  <h1>System Health</h1>
+  <p class="subtitle">Live status of your application</p>
+  <div class="health-grid">
+    <div class="health-card">
+      <div class="health-status">
+        <div class="status-dot" id="api-dot"></div>
+        <div class="status-label" id="api-status">Checking...</div>
+      </div>
+      <div class="health-detail">API Server</div>
+      <div class="uptime-bar"><div class="uptime-fill"></div></div>
+    </div>
+    <div class="health-card">
+      <div class="health-status">
+        <div class="status-dot" id="db-dot"></div>
+        <div class="status-label" id="db-status">Checking...</div>
+      </div>
+      <div class="health-detail">Database</div>
+      <div class="uptime-bar"><div class="uptime-fill"></div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="section-header">
+      <strong>Health Check Response</strong>
+      <button class="refresh-btn" onclick="loadHealth()">Refresh</button>
+    </div>
+    <div id="health-raw" style="font-family:monospace;font-size:13px;color:#555;background:#f8f8f8;padding:16px;border-radius:8px;">Loading...</div>
+  </div>
+</div>
+
+<!-- METRICS PAGE -->
+<div class="page" id="page-metrics">
+  <h1>Prometheus Metrics</h1>
+  <p class="subtitle">Live application performance metrics</p>
+  <div class="card">
+    <div class="section-header">
+      <strong>HTTP Requests</strong>
+      <button class="refresh-btn" onclick="loadMetrics()">Refresh</button>
+    </div>
+    <div id="http-metrics"></div>
+  </div>
+  <div class="card">
+    <div class="section-header"><strong>Node.js Runtime</strong></div>
+    <div id="node-metrics"></div>
+  </div>
+</div>
+
+<script>
+  let filter = 'all';
+
+  function showPage(name, btn) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+    btn.classList.add('active');
+    if (name === 'health') loadHealth();
+    if (name === 'metrics') loadMetrics();
+  }
+
+  async function loadTasks() {
+    const res = await fetch('/tasks');
+    const tasks = await res.json();
+    const done = tasks.filter(t => t.done).length;
+    document.getElementById('total').textContent = tasks.length;
+    document.getElementById('pending').textContent = tasks.length - done;
+    document.getElementById('completed').textContent = done;
+    const list = document.getElementById('taskList');
+    const filtered = tasks.filter(t => filter === 'all' ? true : filter === 'done' ? t.done : !t.done);
+    if (filtered.length === 0) {
+      list.innerHTML = '<div class="empty">No tasks here! Add one above.</div>';
+      return;
+    }
+    list.innerHTML = filtered.map(t => `
+      <div class="task-item ${t.done ? 'done' : ''}">
+        <div class="checkbox ${t.done ? 'checked' : ''}" onclick="toggleTask(${t.id}, ${t.done})">${t.done ? '&#10003;' : ''}</div>
+        <span class="task-title">${t.title}</span>
+        <button class="delete-btn" onclick="deleteTask(${t.id})">&#215;</button>
+      </div>
+    `).join('');
+  }
+
+  async function addTask() {
+    const input = document.getElementById('taskInput');
+    const title = input.value.trim();
+    if (!title) return;
+    await fetch('/tasks', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({title}) });
+    input.value = '';
+    loadTasks();
+  }
+
+  async function toggleTask(id, done) {
+    await fetch(`/tasks/${id}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({done: !done}) });
+    loadTasks();
+  }
+
+  async function deleteTask(id) {
+    await fetch(`/tasks/${id}`, { method: 'DELETE' });
+    loadTasks();
+  }
+
+  function setFilter(f, btn) {
+    filter = f;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    loadTasks();
+  }
+
+  async function loadHealth() {
+    try {
+      const res = await fetch('/health');
+      const data = await res.json();
+      document.getElementById('api-dot').className = 'status-dot green';
+      document.getElementById('api-status').textContent = 'Online';
+      document.getElementById('db-dot').className = 'status-dot green';
+      document.getElementById('db-status').textContent = 'Connected';
+      document.getElementById('health-raw').textContent = JSON.stringify(data, null, 2);
+    } catch(e) {
+      document.getElementById('api-dot').className = 'status-dot red';
+      document.getElementById('api-status').textContent = 'Offline';
+      document.getElementById('health-raw').textContent = 'Error: ' + e.message;
+    }
+  }
+
+  async function loadMetrics() {
+    try {
+      const res = await fetch('/metrics');
+      const text = await res.text();
+      const lines = text.split('\n').filter(l => !l.startsWith('#') && l.trim());
+      const httpLines = lines.filter(l => l.startsWith('http_requests_total'));
+      const nodeLines = lines.filter(l => l.startsWith('nodejs_version') || l.startsWith('process_resident') || l.startsWith('process_heap'));
+      document.getElementById('http-metrics').innerHTML = httpLines.length ? httpLines.map(l => {
+        const [name, val] = l.split(' ');
+        return `<div class="metric-row"><span class="metric-name">${name}</span><span class="metric-value">${val}</span></div>`;
+      }).join('') : '<div style="color:#bbb;font-size:14px;padding:8px 0">No HTTP requests recorded yet</div>';
+      document.getElementById('node-metrics').innerHTML = nodeLines.map(l => {
+        const [name, val] = l.split(' ');
+        return `<div class="metric-row"><span class="metric-name">${name}</span><span class="metric-value">${val}</span></div>`;
+      }).join('');
+    } catch(e) {
+      document.getElementById('http-metrics').innerHTML = 'Error loading metrics';
+    }
+  }
+
+  loadTasks();
+</script>
+</body>
+</html>

@@ -1,10 +1,14 @@
 const express = require('express');
 const client = require('prom-client');
 const taskRoutes = require('./routes/tasks');
+const path = require('path');
 
 const app = express();
 app.use(express.json());
-
+app.use(express.static(path.join(process.cwd(), 'src', 'public')));
+app.get('/', (req, res) => {
+  res.sendFile(path.join(process.cwd(), 'src', 'public', 'index.html'));
+});
 // Prometheus metrics
 const register = new client.Registry();
 client.collectDefaultMetrics({ register });
