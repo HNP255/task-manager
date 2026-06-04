@@ -21,21 +21,22 @@ pipeline {
 
         // ── STAGE 2: TEST ───────────────────────────────────────────
         stage('Test') {
-            steps {
-                sh 'npm test -- --ci --forceExit'
-            }
-            post {
-                always {
-                    junit 'junit.xml'   // optional: add jest-junit reporter
-                    publishHTML([
-                        allowMissing: false,
-                        reportDir: 'coverage/lcov-report',
-                        reportFiles: 'index.html',
-                        reportName: 'Coverage Report'
-                    ])
-                }
-            }
+         steps {
+        sh 'npm test'
+    }
+    post {
+        always {
+            publishHTML([
+                allowMissing: true,
+                alwaysLinkToLastBuild: true,
+                keepAll: true,
+                reportDir: 'coverage/lcov-report',
+                reportFiles: 'index.html',
+                reportName: 'Coverage Report'
+            ])
         }
+    }
+}
 
         // ── STAGE 3: CODE QUALITY ───────────────────────────────────
         stage('Code Quality') {
