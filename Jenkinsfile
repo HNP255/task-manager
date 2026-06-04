@@ -39,24 +39,24 @@ pipeline {
             steps {
                 timeout(time: 5, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: false
+                }
+            }
         }
-    }
-}
 
-       stage('Security Scan') {
+        stage('Security Scan') {
             steps {
                 echo "Running Trivy security scan..."
                 bat 'docker run --rm -v "%CD%\\src":/project aquasec/trivy:latest fs --exit-code 0 --severity HIGH,CRITICAL --scanners vuln --timeout 10m /project'
                 echo "Security scan completed"
+            }
         }
-}
 
         stage('Deploy to Staging') {
             steps {
                 echo "Deploying to staging..."
                 bat 'docker compose down --remove-orphans || exit 0'
                 bat 'docker compose up -d'
-                bat 'timeout /t 10 /nobreak'
+                bat 'ping -n 10 127.0.0.1 > nul'
                 echo "Staging live at http://localhost:3001"
             }
         }
@@ -67,7 +67,7 @@ pipeline {
                 bat 'docker tag task-manager:latest task-manager:prod'
                 bat 'docker compose -f docker-compose.prod.yml down || exit 0'
                 bat 'docker compose -f docker-compose.prod.yml up -d'
-                bat 'timeout /t 10 /nobreak'
+                bat 'ping -n 10 127.0.0.1 > nul'
                 echo "Production live at http://localhost:3000"
             }
         }
@@ -75,43 +75,13 @@ pipeline {
         stage('Monitoring') {
             steps {
                 echo "Checking monitoring stack..."
-                bat 'timeout /t 5 /nobreak'
+                bat 'ping -n 5 127.0.0.1 > nul'
                 bat 'curl -f http://localhost:9090/-/healthy || echo Prometheus starting'
                 bat 'curl -f http://localhost:3000/metrics || echo Metrics check done'
                 echo "Prometheus: http://localhost:9090"
                 echo "Grafana: http://localhost:3002"
             }
-        }stage('Deploy to Staging') {
-    steps {
-        echo "Deploying to staging..."
-        bat 'docker compose down --remove-orphans || exit 0'
-        bat 'docker compose up -d'
-        bat 'ping -n 10 127.0.0.1 > nul'
-        echo "Staging live at http://localhost:3001"
-    }
-}
-
-stage('Release') {
-    steps {
-        echo "Releasing to production..."
-        bat 'docker tag task-manager:latest task-manager:prod'
-        bat 'docker compose -f docker-compose.prod.yml down || exit 0'
-        bat 'docker compose -f docker-compose.prod.yml up -d'
-        bat 'ping -n 10 127.0.0.1 > nul'
-        echo "Production live at http://localhost:3000"
-    }
-}
-
-stage('Monitoring') {
-    steps {
-        echo "Checking monitoring stack..."
-        bat 'ping -n 5 127.0.0.1 > nul'
-        bat 'curl -f http://localhost:9090/-/healthy || echo Prometheus starting'
-        bat 'curl -f http://localhost:3000/metrics || echo Metrics check done'
-        echo "Prometheus: http://localhost:9090"
-        echo "Grafana: http://localhost:3002"
-    }
-}
+        }
     }
 
     post {
