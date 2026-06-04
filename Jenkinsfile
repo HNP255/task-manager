@@ -44,11 +44,12 @@ pipeline {
 }
 
         stage('Security Scan') {
-            steps {
-                echo "Running security scan..."
-                bat 'docker run --rm aquasec/trivy:latest image --exit-code 0 --severity HIGH,CRITICAL task-manager:latest'
-            }
-        }
+    steps {
+        echo "Running Trivy security scan on filesystem..."
+        bat 'docker run --rm -v "%CD%":/project aquasec/trivy:latest fs --exit-code 0 --severity HIGH,CRITICAL /project'
+        echo "Security scan completed"
+    }
+}
 
         stage('Deploy to Staging') {
             steps {
