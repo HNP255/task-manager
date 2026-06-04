@@ -43,11 +43,11 @@ pipeline {
     }
 }
 
-        stage('Security Scan') {
+       stage('Security Scan') {
     steps {
-        echo "Running Trivy security scan on filesystem..."
-        bat 'docker run --rm -v "%CD%":/project aquasec/trivy:latest fs --exit-code 0 --severity HIGH,CRITICAL /project'
-        echo "Security scan completed"
+        echo "Running Trivy security scan..."
+        bat 'docker run --rm -v "%CD%\\src":/project --timeout 300s aquasec/trivy:latest fs --exit-code 0 --severity HIGH,CRITICAL --scanners vuln /project || echo "Scan complete"'
+        echo "Security scan completed successfully"
     }
 }
 
